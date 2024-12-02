@@ -1,7 +1,7 @@
-use clap::{command, arg};
+use clap::{arg, command};
+use std::collections::HashMap;
 use std::fs;
 use std::num::ParseIntError;
-use std::collections::HashMap;
 
 fn parse_input(input: &str) -> Result<(Vec<i32>, Vec<i32>), ParseIntError> {
     let mut list1 = Vec::new();
@@ -51,11 +51,11 @@ fn part2(list1: &[i32], list2: &[i32]) -> i32 {
 }
 
 fn main() {
-    let matches = command!()
-        .arg(arg!(<input> "Input filename"))
-        .get_matches();
+    let matches = command!().arg(arg!(<input> "Input filename")).get_matches();
 
-    let input_filename = matches.get_one::<String>("input").expect("input file required");
+    let input_filename = matches
+        .get_one::<String>("input")
+        .expect("input file required");
     let input_contents = fs::read_to_string(input_filename).expect("could not read input file");
     let (list1, list2) = parse_input(&input_contents).expect("could not parse input");
 
