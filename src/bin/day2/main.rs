@@ -1,14 +1,15 @@
-use clap::{command, Arg, value_parser};
-use std::path::PathBuf;
+use clap::{command, value_parser, Arg};
 use std::fs;
+use std::path::PathBuf;
 
 fn parse_input(input: &str) -> Vec<Vec<i32>> {
     let mut reports = Vec::new();
 
     for line in input.lines() {
-        let report = line.split(' ')
-                .map(|level| level.parse::<i32>().expect("Could not parse level"))
-                .collect();
+        let report = line
+            .split(' ')
+            .map(|level| level.parse::<i32>().expect("Could not parse level"))
+            .collect();
 
         reports.push(report);
     }
@@ -17,10 +18,12 @@ fn parse_input(input: &str) -> Vec<Vec<i32>> {
 }
 
 fn is_safe(report: &[i32]) -> bool {
-    let mut is_increasing = false;
-    let mut is_decreasing = false;
+    let mut prev_diff = None;
 
-    for (a, b) in report.iter().zip(report.iter().skip(1)) {
+    for items in report.windows(2) {
+        let [a, b] = items else {
+            panic!("items did not have 2 items")
+        };
         let diff = b - a;
         let abs_diff = diff.abs();
 
@@ -28,20 +31,43 @@ fn is_safe(report: &[i32]) -> bool {
             return false;
         }
 
-        if diff > 0 {
-            is_increasing = true;
-        } else if diff < 0 {
-            is_decreasing = true;
+        if let Some(d) = prev_diff {
+            // if their sign differs
+            if (d < 0 && diff > 0) || (d > 0 && diff < 0) {
+                return false;
+            }
         }
+
+        prev_diff = Some(diff);
     }
 
-    is_increasing ^ is_decreasing
+    true
 }
 
 fn part1(reports: &[Vec<i32>]) -> usize {
-    reports.iter()
-           .filter(|report| is_safe(report))
-           .count()
+    reports.iter().filter(|report| is_safe(report)).count()
+}
+
+fn part2(reports: &[Vec<i32>]) -> usize {
+    reports
+        .iter()
+        .filter(|report| {
+            if is_safe(report) {
+                return true;
+            }
+
+            report
+                .iter()
+                .enumerate()
+                .map(|(index, _)| {
+                    let mut new_report = (*report).clone();
+                    new_report.remove(index);
+
+                    return new_report;
+                })
+                .any(|report| is_safe(&report))
+        })
+        .count()
 }
 
 fn main() {
@@ -49,7 +75,7 @@ fn main() {
         .arg(
             Arg::new("input")
                 .required(true)
-                .value_parser(value_parser!(PathBuf))
+                .value_parser(value_parser!(PathBuf)),
         )
         .get_matches();
 
@@ -59,4 +85,7 @@ fn main() {
 
     let result1 = part1(&reports);
     println!("Part 1: {}", result1);
+
+    let result2 = part2(&reports);
+    println!("Part 2: {}", result2);
 }
